@@ -1,66 +1,57 @@
 import boto3
-
-# print(s3_client.list_buckets())
 import psycopg2
 import pandas
-
-host = "ac-shopping-crm.cmxlethtljrk.ap-southeast-2.rds.amazonaws.com"
-database = "ac_shopping_crm"
-user = "ac_master"
-password = "Datasquad2021"
-port = 5432
-
-conn = psycopg2.connect(
-    host=host, database=database, user=user, password=password, port=port
-)
+import json
+from datetime import datetime
+import datetime as dt
 
 
-# data frame
-
-export_sql = "select * from ac_shopping.customer"
-
-export_df = pandas.read_sql_query(export_sql, conn)
-
-print(export_df.head(10))
-
-export_df.to_csv("customer_test.csv", header="true")
-
-s3_client = boto3.client(
-    "s3",
+secrets_manager_client = boto3.client(
+    "secretsmanager",
+    region_name="ap-southeast-2",
     aws_access_key_id="AKIA2P7EBZVPLAJPQ3MP",
     aws_secret_access_key="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",
-    region_name="ap-southeast-2",
-)
-
-bucket_name = "ac-shopping-datalake"
-
-s3_client.upload_file(
-    "customer_test.csv", bucket_name, "ac_shopping_crm/customer_test.csv"
 )
 
 
-redshift_host = (
-    "ac-shopping-datawarehouse.cdzgizud15s1.ap-southeast-2.redshift.amazonaws.com"
-)
+def get_secret(secret_name):
 
-redshift_database = "data_lake"
-redshift_user = "ac_master"
-redshift_password = "Datasquad2021"
-redshift_port = 5439
+    client = boto3.client(
+        "secretsmanager",
+        region_name="ap-southeast-2",
+        aws_access_key_id="AKIA2P7EBZVPHEO6M6TN",
+        aws_secret_access_key="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",
+    )
 
-redshift_conn = psycopg2.connect(
-    host=redshift_host,
-    database=redshift_database,
-    user=redshift_user,
-    password=redshift_password,
-    port=redshift_port,
-)
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        secret = get_secret_value_response["SecretString"]
+        return json.loads(secret)
+    except Exception as e:
+        print("Failed to retrive secret from secretsmanager " + str(e))
+        raise ValueError
 
-copy_table_query = """copy ac_shopping_crm.customer
-    from 's3://ac-shoping-datalake/ac_shopping_crm/customer_test.csv'
-    credentials 'aws_iam_role=arn:aws:iam::721495903582:role/aws-service-role/redshift.amazonaws.com/AWSServiceRoleForRedshift'
-    CSV DELIMITER AS ','
-    IGNOREHEADER 1"""
 
-cursor = redshift_conn.cursor()
-cursor.execute(copy_table_query)
+test = get_secret("postgres_ac_master")
+print(test)
+
+
+postgresql+psycopg2://airflow:airflow@localhost:5432/airflow
+
+aws s3 cp s3://ac-shopping-airflow/airflow-webserver.service  /etc/systemd/system/airflow-webserver.service
+aws s3 cp s3://ac-shopping-airflow/airflow-scheduler.service  /etc/systemd/system/airflow-scheduler.service
+
+
+
+aws s3 cp s3://ac-shopping-airflow/airflow.cfg /home/airflow/airflow/airflow.cfg 
+aws s3 cp s3://ac-shopping-airflow/dags/hello_word.py /home/airflow/airflow/dags/hello_word.py
+
+aws s3 cp s3://ac-shopping-airflow/dags/sample_etl_job.py /home/airflow/airflow/dags/sample_etl_job.py
+
+
+sudo chmod a+rwx /etc/systemd/system
+
+sudo chown -R airflow:airflow /etc/systemd/system
+
+
+ ssh -i "ac-shopping-airflow.pem" ubuntu@3.24.215.151
