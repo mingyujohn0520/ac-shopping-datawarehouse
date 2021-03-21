@@ -8,7 +8,12 @@ AWS_REGION = "ap-southeast-2"
 
 def get_secret(secret_name):
     session = boto3.session.Session()
-    client = session.client(service_name="secretsmanager", region_name=AWS_REGION)
+    client = session.client(
+        service_name="secretsmanager",
+        region_name=AWS_REGION,
+        aws_access_key_id="AKIA2P7EBZVPOGW4NHFY",
+        aws_secret_access_key="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",
+    )
 
     try:
         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
@@ -31,9 +36,3 @@ def get_secret(secret_name):
             secret = base64.b64decode(get_secret_value_response["SecretBinary"])
 
     return json.loads(secret)
-
-
-def get_secret_value_by_key(secret_name, secret_key):
-    response = get_secret(secret_name)
-
-    return response.get(secret_key)

@@ -1,8 +1,8 @@
-from load-ac_shopping_crm import LoadAcShoppingCrm
+from load_ac_shopping_crm import LoadAcShoppingCrm
 
 
 def execute():
-    task = LoadAcShoppingCrm("LoadAcShoppingCrm")
+    task = LoadAcShoppingCrm("ac_shopping_crm")
     task.run()
 
 
