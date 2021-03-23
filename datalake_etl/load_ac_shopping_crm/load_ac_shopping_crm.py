@@ -38,11 +38,13 @@ class LoadAcShoppingCrm(BaseTask):
 
         pipe_config = ac_shopping_crm_config.get_pipeline_config()
 
-        source_credentials = get_secret("postgres_ac_master")
+        # source_credentials = get_secret("postgres_ac_master")
 
-        # source_connection = PostgresSqlConnector.__get_connection()
+        # source_connection = PostgresSqlConnector.get_connection
 
-        return pipe_config.dag_name
+        table_config = ac_shopping_crm_config.get_table_config(pipe_config)
+
+        return table_config
 
     def transform(self):
         return 1
@@ -51,5 +53,7 @@ class LoadAcShoppingCrm(BaseTask):
         return 1
 
     def main(self):
-        dag_name = self.extract()
-        print(dag_name)
+        table_config_list = self.extract()
+
+        for table_config in table_config_list:
+            print(table_config.table_name)

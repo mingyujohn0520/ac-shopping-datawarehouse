@@ -7,7 +7,7 @@ import csv
 
 
 class PostgresSqlConnector:
-    def __get_connection(self):
+    def get_connection(self):
         try:
             connection = psycopg2.connect(
                 host=self.credentials.get("host"),
@@ -49,3 +49,26 @@ class PostgresSqlConnector:
         except Exception as e:
             print(e)
             raise e
+
+    def execute_sql(
+        self, query, postgres_connection=None,
+    ):
+        if not postgres_connection:
+            connection = self.__get_connection()
+        else:
+            connection = postgres_connection
+        try:
+            connection.set_session(autocommit=True)
+            cursor = connection.cursor()
+            try:
+                cursor.execute(query)
+                connection.commit()
+            finally:
+                if connection:
+                    cursor.close()
+                    connection.close()
+
+        except Exception as e:
+            print(e)
+            raise
+

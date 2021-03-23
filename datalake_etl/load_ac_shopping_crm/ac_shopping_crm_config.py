@@ -35,7 +35,7 @@ class AcShoppingCrmConfig:
     def get_table_config(self, pipe_config):
         table_config_list = []
         for table in self.yaml_string.get("tables"):
-            for table, table_config_attr in table.items():
+            for table_name, table_config_attr in table.items():
                 table_config_list.append(
                     TableConfig(table_name, pipe_config, table_config_attr)
                 )
