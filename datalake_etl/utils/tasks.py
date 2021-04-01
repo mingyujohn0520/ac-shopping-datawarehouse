@@ -17,8 +17,8 @@ class BaseTask:
         self.task_start = time.time()
         self.task_name = task_name.lower().replace(" ", "_")
         self.task_id = str(uuid.uuid4())
-        self.host = socket.gethostname()
-        self.user = getpass.getuser()
+        # self.host = socket.gethostname()
+        # self.user = getpass.getuser()
         self.task_status = "Ready"
         self._initialize()
 

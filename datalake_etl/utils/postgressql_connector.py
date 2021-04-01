@@ -1,12 +1,13 @@
-import traceback
 import psycopg2
-from psycopg2 import Error
-from psycopg2 import sql
 import pandas as pd
-import csv
+from utils.secrets import get_secret
 
 
 class PostgresSqlConnector:
+    def __init__(self, secret_name=None):
+        self.secret_name = secret_name
+        self.credentials = get_secret(self.secret_name)
+
     def get_connection(self):
         try:
             connection = psycopg2.connect(
@@ -21,54 +22,23 @@ class PostgresSqlConnector:
             raise e
         return connection
 
-    def export_sql(
-        self, query, filename, delimiter, postgres_connection=None, params=None,
-    ):
-        if not postgres_connection:
-            connection = self.__get_connection()
-        else:
-            connection = postgres_connection
+    def get_execute_sql_result(self, sql, connection=None):
+        if connection is None:
+            connection = self.get_connection()
+
         try:
             cursor = connection.cursor()
-            try:
-                cursor.execute(query, params)
-
-                with gzip.open(filename, "wt") as f:
-                    writer = csv.writer(
-                        f, quoting=csv.QUOTE_ALL, delimiter=delimiter, escapechar="\\"
-                    )
-                    writer.writerow(col[0] for col in cursor.description)
-                    rows = cursor.fetchall()
-                    # for row in rows:
-                    #     writer.writerow("NULL" if x is None else x for x in row)
-                    writer.writerows(rows)
-
-            finally:
-                cursor.close()
-
+            cursor.execute(sql)
+            result = cursor.fetchall()
         except Exception as e:
-            print(e)
             raise e
-
-    def execute_sql(
-        self, query, postgres_connection=None,
-    ):
-        if not postgres_connection:
-            connection = self.__get_connection()
         else:
-            connection = postgres_connection
-        try:
-            connection.set_session(autocommit=True)
-            cursor = connection.cursor()
-            try:
-                cursor.execute(query)
-                connection.commit()
-            finally:
-                if connection:
-                    cursor.close()
-                    connection.close()
+            return result
 
-        except Exception as e:
-            print(e)
-            raise
+    def export_sql_to_csv(self, sql, export_file_name, connection=None):
+        if connection is None:
+            connection = self.get_connection()
+
+        export_df = pd.read_sql(sql, connection)
+        export_df.to_csv(export_file_name, header="true", index=False)
 

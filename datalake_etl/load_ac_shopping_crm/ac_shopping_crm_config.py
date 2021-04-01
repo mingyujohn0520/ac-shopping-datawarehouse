@@ -32,13 +32,11 @@ class AcShoppingCrmConfig:
     def get_pipeline_config(self):
         return PipelineConfig(self)
 
-    def get_table_config(self, pipe_config):
+    def get_table_config(self):
         table_config_list = []
         for table in self.yaml_string.get("tables"):
             for table_name, table_config_attr in table.items():
-                table_config_list.append(
-                    TableConfig(table_name, pipe_config, table_config_attr)
-                )
+                table_config_list.append(TableConfig(table_name, table_config_attr))
         return table_config_list
 
 
@@ -61,11 +59,11 @@ class PipelineConfig:
 
 class TableConfig:
     def __init__(
-        self, table_name, pipe_config, table_config_attr,
+        self, table_name, table_config_attr,
     ):
-        self._resolve_parameters(table_name, pipe_config, table_config_attr)
+        self._resolve_parameters(table_name, table_config_attr)
 
-    def _resolve_parameters(self, table_name, pipe_config, table_config_attr):
+    def _resolve_parameters(self, table_name, table_config_attr):
         # resolve table ort level config
         self.table_name = table_name
         self.export_file_name = table_config_attr.get("export_file_name")
