@@ -22,6 +22,18 @@ class PostgresSqlConnector:
             raise e
         return connection
 
+    def execute_sql(self, sql, connection=None):
+        if connection is None:
+            connection = self.get_connection()
+            connection.autocommit = True
+        try:
+            cursor = connection.cursor()
+            cursor.execute(sql)
+            ##cursor.execute("COMMIT")
+            print("Successfully executed {}".format(sql))
+        except Exception as e:
+            raise e
+
     def get_execute_sql_result(self, sql, connection=None):
         if connection is None:
             connection = self.get_connection()
@@ -93,3 +105,20 @@ class PostgresSqlConnector:
 
         return df
 
+    def get_table_primary_keys(self, table_name, schema_name):
+        # this is the only method that works in postgres and redshift
+        sql = f"""
+            SELECT attname column_name
+            FROM pg_index ind, pg_class cl, pg_attribute att
+            WHERE cl.oid = '{schema_name}.{table_name}'::regclass
+            AND ind.indrelid = cl.oid
+            AND att.attrelid = cl.oid
+            AND att.attnum::text =
+                ANY(string_to_array(textin(int2vectorout(ind.indkey)), ' '))
+            AND attnum > 0
+            AND ind.indisprimary
+            ORDER BY att.attnum;
+        """
+
+        df = self.query_sql(query=sql)
+        return df["column_name"].tolist()

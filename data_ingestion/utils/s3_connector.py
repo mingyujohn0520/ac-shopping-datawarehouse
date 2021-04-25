@@ -8,14 +8,14 @@ class S3Connector:
             self.s3_client = boto3.client(
                 service_name="s3",
                 region_name="ap-southeast-2",
-                aws_access_key_id="AKIA2P7EBZVPO7RMLFLN",
-                aws_secret_access_key="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",
+                aws_access_key_id="",
+                aws_secret_access_key="",
             )
             self.s3_resource = boto3.resource(
                 service_name="s3",
                 region_name="ap-southeast-2",
-                aws_access_key_id="AKIA2P7EBZVPO7RMLFLN",
-                aws_secret_access_key="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",
+                aws_access_key_id="",
+                aws_secret_access_key="",
             )
         except Exception as e:
             print(e)

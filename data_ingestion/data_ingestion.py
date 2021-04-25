@@ -5,6 +5,7 @@ import json
 from utils.tasks import BaseTask
 from utils.s3_connector import S3Connector
 from utils.postgressql_connector import PostgresSqlConnector
+from data_ingestion_config import DataIngestionConfig, PipelineConfig, TableConfig
 
 
 from datetime import datetime
@@ -53,11 +54,24 @@ class DataIngestionTask(BaseTask):
 
         return PostgresSqlConnector(credentials)
 
-    def create_table(self, source_schema, source_table):
+    def create_table(
+        self,
+        source_schema,
+        source_table,
+        destination_schema,
+        destionation_table,
+        source_connection,
+        destination_connection,
+    ):
 
-        df = postgre_conn.get_column_metadata("customer", "ac_shopping")
+        df = source_connection.get_column_metadata(source_table, source_schema)
 
-        table_sql = "create table if not exists ac_shopping_crm.customer ("
+        schema_sql = "create schema if not exists {};".format(destination_schema)
+        destination_connection.execute_sql(schema_sql)
+
+        table_sql = "create table if not exists {}.{} (".format(
+            destination_schema, destionation_table
+        )
 
         row_sql_list = []
         for row in df.itertuples(index=False):
@@ -74,7 +88,9 @@ class DataIngestionTask(BaseTask):
             row_sql_list.append(row_sql)
 
         create_table_sql = table_sql + "\n" + ",\n".join(row_sql_list) + ")"
-        redshift_conn.e
+        print(create_table_sql)
+
+        destination_connection.execute_sql(create_table_sql)
 
     def _map_to_redshift_column(
         self, column, data_type, col_type, char_max_length, num_precision, num_scale,
@@ -130,28 +146,46 @@ class DataIngestionTask(BaseTask):
 
     def main(self):
         ##self.s3_con.list_bucket()
+        main_config = DataIngestionConfig("config/ac_shopping_crm.yml")
+        pipe_config = main_config.get_pipeline_config()
+        table_config_list = main_config.get_table_config()
 
-        postgre_conn = self._get_connection("postgres_ac_master")
+        postgre_conn = self._get_connection(pipe_config.source_credentials)
 
-        redshift_conn = self._get_connection("redshift_ac_master")
+        redshift_conn = self._get_connection(pipe_config.destination_credentials)
 
-        df = postgre_conn.get_column_metadata("customer", "ac_shopping")
+        for table_config in table_config_list:
 
-        table_sql = "create table if not exists ac_shopping_crm.customer ("
+            if not redshift_conn.table_exists(
+                table_config.destination_table, pipe_config.staging_schema,
+            ):
+                self.create_table(
+                    pipe_config.source_schema,
+                    table_config.source_table,
+                    pipe_config.staging_schema,
+                    table_config.destination_table,
+                    postgre_conn,
+                    redshift_conn,
+                )
 
-        row_sql_list = []
-        for row in df.itertuples(index=False):
-            # apply source to Redshift data type mappings
-            row_sql = self._map_to_redshift_column(
-                column=row.column_name,
-                data_type=row.data_type,
-                col_type=row.column_type,
-                char_max_length=row.character_maximum_length,
-                num_precision=row.numeric_precision,
-                num_scale=row.numeric_scale,
-            )
+            if not redshift_conn.table_exists(
+                table_config.destination_table, pipe_config.destination_schema,
+            ):
+                self.create_table(
+                    pipe_config.source_schema,
+                    table_config.source_table,
+                    pipe_config.destination_schema,
+                    table_config.destination_table,
+                    postgre_conn,
+                    redshift_conn,
+                )
 
-            row_sql_list.append(row_sql)
-
-        print(table_sql + "\n" + ",\n".join(row_sql_list) + ")")
+        # self.create_table(
+        #     "ac_shopping",
+        #     "customer",
+        #     "ac_shopping_crm_test",
+        #     "customer",
+        #     postgre_conn,
+        #     redshift_conn,
+        # )
 

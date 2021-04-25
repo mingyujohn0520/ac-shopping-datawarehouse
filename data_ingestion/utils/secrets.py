@@ -11,8 +11,8 @@ def get_secret(secret_name):
     client = session.client(
         service_name="secretsmanager",
         region_name=AWS_REGION,
-        aws_access_key_id="AKIA2P7EBZVPO7RMLFLN",
-        aws_secret_access_key="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",
+        aws_access_key_id="",
+        aws_secret_access_key="",
     )
 
     try:

@@ -1,0 +1,34 @@
+dag_name: de_daily_load_ac_shopping_crm
+source_credentials: postgres_ac_master
+source_schema: ac_shopping
+destination_schema: ac_shopping_crm
+destination_credentials: redshift_ac_master
+staging_schema: staging
+s3_bucket_name: ac-shopping-datalake
+
+tables:
+  - customer:
+      destination_table: customer
+      export_file_name: customer.csv
+      s3_file_path: ac_shopping_crm/customer.csv
+      load_columns: ["customer_id",
+                      "first_name",
+                      "last_name",
+                      "gender",
+                      "dob",
+                      "registered_at",
+                      "last_login_at",
+                      "email_address",
+                      "mobile",
+                      "street_1",
+                      "street_2",
+                      "suburb",
+                      "state",
+                      "country",
+                      "postcode",
+                      "created_at",
+                      "updated_at"]
+      update_method: incremental_load
+      incremental_load_columns: ["created_at","updated_at"]
+      copy_extra_params: "CSV DELIMITER AS ',' IGNOREHEADER 1 NULL AS 'NULL'"
+ 
