@@ -11,7 +11,7 @@ tables:
       destination_table: customer
       export_file_name: customer.csv
       s3_file_path: ac_shopping_crm/customer.csv
-      load_columns: ["customer_id",
+      column_inclusions: ["customer_id",
                       "first_name",
                       "last_name",
                       "gender",

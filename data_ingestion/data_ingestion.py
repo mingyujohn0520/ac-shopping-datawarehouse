@@ -6,8 +6,7 @@ from utils.tasks import BaseTask
 from utils.s3_connector import S3Connector
 from utils.postgressql_connector import PostgresSqlConnector
 from data_ingestion_config import DataIngestionConfig, PipelineConfig, TableConfig
-
-
+import pandas
 from datetime import datetime
 
 # import pendulum
@@ -144,9 +143,26 @@ class DataIngestionTask(BaseTask):
 
         return col_string
 
+    def extract_table_data(self, db_connection, table_config, pipe_config):
+        extract_table_sql = "select {column_inclusions} from {schema_name}.{table_name}".format(
+            column_inclusions=",".join(table_config.column_inclusions),
+            schema_name=pipe_config.source_schema,
+            table_name=table_config.source_table,
+        )
+
+        if table_config.update_method == "incremental_load":
+            extract_table_sql = (
+                extract_table_sql
+                + "\n where "
+                + " >= '2021-03-01' or ".join(table_config.incremental_load_columns)
+                + " >= '2021-03-01'"
+            )
+
+        db_connection.export_sql_to_csv(extract_table_sql, "customer.csv")
+
     def main(self):
         ##self.s3_con.list_bucket()
-        main_config = DataIngestionConfig("config/ac_shopping_crm.yml")
+        main_config = DataIngestionConfig(self.config_path)
         pipe_config = main_config.get_pipeline_config()
         table_config_list = main_config.get_table_config()
 
@@ -180,12 +196,5 @@ class DataIngestionTask(BaseTask):
                     redshift_conn,
                 )
 
-        # self.create_table(
-        #     "ac_shopping",
-        #     "customer",
-        #     "ac_shopping_crm_test",
-        #     "customer",
-        #     postgre_conn,
-        #     redshift_conn,
-        # )
+            print(self.extract_table_data(postgre_conn, table_config, pipe_config))
 

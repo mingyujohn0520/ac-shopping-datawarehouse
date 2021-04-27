@@ -125,10 +125,13 @@ class TableConfig:
             self.column_transformations = self._resolve_transformations(
                 table_attr.get("column_transformations")
             )
+            self.column_inclusions = table_attr.get("column_inclusions")
+            self.incremental_load_columns = table_attr.get("incremental_load_columns")
 
         else:
             self.update_keys = table_attr.get("update_keys")
             self.column_inclusions = table_attr.get("column_inclusions")
+            self.incremental_load_columns = table_attr.get("incremental_load_columns")
 
         self.sort_key = self._resolve_sort_key(table_attr.get("sort_key"))
 
